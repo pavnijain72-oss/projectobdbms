@@ -1,19 +1,6 @@
 """
-db.py - Database Interface Layer
-=================================
-Handles all raw SQL access for the Secure Deadlock Detection and
+Handles all the raw SQL access for the Secure Deadlock Detection and for the
 Database Access Control System.
-
-NOTE ON DATABASE ENGINE:
-The proposal specifies MySQL. This build uses SQLite (Python's built-in
-sqlite3 module) so the project runs anywhere with zero setup and no
-extra installed packages or running DB server. The SQL used here is
-ANSI-standard enough that switching to MySQL later only requires:
-  1. `pip install mysql-connector-python`
-  2. Swapping `get_conn()` below to open a MySQL connection instead
-  3. Changing `AUTOINCREMENT` -> `AUTO_INCREMENT` in schema.sql
-Everything else (queries, app logic, deadlock/access-control modules)
-stays the same because they only use plain SQL through this module.
 """
 
 import sqlite3
@@ -161,14 +148,12 @@ def seed(conn):
 
     res_ids = {r["name"]: r["id"] for r in conn.execute("SELECT * FROM resources")}
 
-    # admin: full read/write on everything
     for rid in res_ids.values():
         conn.execute(
             "INSERT INTO permissions (role_id, resource_id, can_read, can_write) VALUES (?, ?, 1, 1)",
             (role_ids["admin"], rid),
         )
 
-    # manager: read/write on Orders, Inventory, Customers, Employees; read-only on Salaries
     manager_rw = ["Orders", "Inventory", "Customers", "Employees"]
     for name in manager_rw:
         conn.execute(
@@ -180,7 +165,6 @@ def seed(conn):
         (role_ids["manager"], res_ids["Salaries"]),
     )
 
-    # user: read/write on Orders, Inventory; read-only on Customers; NO access to Employees/Salaries
     conn.execute(
         "INSERT INTO permissions (role_id, resource_id, can_read, can_write) VALUES (?, ?, 1, 1)",
         (role_ids["user"], res_ids["Orders"]),
@@ -195,7 +179,6 @@ def seed(conn):
     )
     conn.commit()
 
-    # seed users: admin/admin123, manager/manager123, alice/alice123, bob/bob123
     users = [
         ("admin", "admin123", "admin"),
         ("manager1", "manager123", "manager"),
