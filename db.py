@@ -117,7 +117,6 @@ def init_db(reset=False):
     conn.executescript(SCHEMA)
     conn.commit()
 
-    # Seed only if empty
     cur = conn.execute("SELECT COUNT(*) AS c FROM roles")
     if cur.fetchone()["c"] == 0:
         seed(conn)
