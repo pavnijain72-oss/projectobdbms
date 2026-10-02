@@ -1,11 +1,3 @@
-"""
-app.py - Flask front controller
-=================================
-Wires together the Authentication & Access Control, Transaction &
-Resource Management, Deadlock Detection/Resolution, and Monitoring
-modules behind a small web UI, per the project architecture diagram.
-"""
-
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 
@@ -20,7 +12,6 @@ app.secret_key = "dev-secret-key-change-in-production"
 db.init_db()
 
 
-# ---------------------------------------------------------------- helpers
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -57,7 +48,6 @@ def inject_user():
     return {"current_user": current_user()}
 
 
-# ---------------------------------------------------------------- auth
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -80,8 +70,6 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-
-# ---------------------------------------------------------------- dashboard
 @app.route("/")
 @login_required
 def dashboard():
@@ -92,7 +80,6 @@ def dashboard():
     return render_template("dashboard.html", user=user, my_perms=my_perms, active_tx=active_tx)
 
 
-# ---------------------------------------------------------------- resources & access control
 @app.route("/resources")
 @login_required
 def resources():
@@ -118,7 +105,6 @@ def admin_users():
     return render_template("admin_users.html", users=users)
 
 
-# ---------------------------------------------------------------- transactions & locking
 @app.route("/transactions")
 @login_required
 def transactions():
@@ -152,7 +138,7 @@ def tx_begin():
 def tx_lock(tx_id):
     user = current_user()
     resource_id = int(request.form["resource_id"])
-    lock_type = request.form["lock_type"]  # 'shared' or 'exclusive'
+    lock_type = request.form["lock_type"] 
     mode = "write" if lock_type == "exclusive" else "read"
 
     conn = db.get_conn()
@@ -189,8 +175,6 @@ def tx_rollback(tx_id):
     flash(f"Transaction T{tx_id} rolled back; resources released.", "success")
     return redirect(url_for("transactions"))
 
-
-# ---------------------------------------------------------------- deadlock detection/resolution
 @app.route("/deadlock/check", methods=["POST"])
 @login_required
 def deadlock_check():
@@ -220,8 +204,6 @@ def deadlock_check():
 def api_graph():
     return jsonify(dl.get_current_graph_display())
 
-
-# ---------------------------------------------------------------- monitoring / logs
 @app.route("/logs")
 @roles_required("admin", "manager")
 def logs():
